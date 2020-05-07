@@ -14,20 +14,31 @@ class ProcessOrderCustomer
      * @param float $maxProfitRateNew
      * @return void
      */
-    public function processOrder(CarbonImmutable $fromDate, CarbonImmutable $toDate, float $maxProfitRateNew) : void
+    public function processOrder(CarbonImmutable $fromDate, CarbonImmutable $toDate, float $maxProfitRateNew): void
     {
-        $orderModel = new MstOrder;
-        $orders = $orderModel->getOrders($fromDate, $toDate, $maxProfitRateNew);
+        $page = 1;
+        $limit = 10;
+        while (true) {
+            $offset = ($page - 1) * $limit;
+            $orderModel = new MstOrder;
+            $orders = $orderModel->getOrders($fromDate, $toDate, $maxProfitRateNew, $limit, $offset);
 
-        $orders->each(function (MstOrder $order) use ($maxProfitRateNew) {
-            $priceInvoice = $order->price_invoice;
-            $maxProfitPrice = $priceInvoice / (1 - $maxProfitRateNew);
-            $order->max_profit_rate = $maxProfitRateNew;
-            $order->max_profit_price = $maxProfitPrice;
-            $order->save();
+            if (!$orders->count()) {
+                break;
+            }
 
-            LogJob::dispatch($order, ['max_profit_rate' => $order->max_profit_rate, 'max_profit_price' => $order->max_profit_price])
-                ->onQueue('slow-queue');
-        });
+            $orders->each(function (MstOrder $order) use ($maxProfitRateNew) {
+                $priceInvoice = $order->price_invoice;
+                $maxProfitPrice = $priceInvoice / (1 - $maxProfitRateNew);
+                $order->max_profit_rate = $maxProfitRateNew;
+                $order->max_profit_price = $maxProfitPrice;
+                $order->save();
+
+                LogJob::dispatch($order, ['max_profit_rate' => $order->max_profit_rate, 'max_profit_price' => $order->max_profit_price])
+                    ->onQueue('slow-queue');
+            });
+            $page++;
+        }
+
     }
 }

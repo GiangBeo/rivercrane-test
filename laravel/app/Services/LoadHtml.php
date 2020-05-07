@@ -12,7 +12,7 @@ class LoadHtml
         $doc = new DOMDocument();
         $doc->loadHTML($html);
         $name = $this->getTextBetweenTags($doc, 'a');
-        $informations = $this->getTableContent($doc);
+        $information = $this->getTableContent($doc);
         $price = $this->getTextOfClassName($doc, 'price')->item(0)->firstChild->nodeValue;
         $phone = $this->getTextBetweenTags($doc, 'span');
         $sellerInfo = $this->getTextOfClassName($doc, 'name')->item(1);
@@ -21,9 +21,9 @@ class LoadHtml
             'image' => $this->getImage($doc),
             'href' => $this->getLink($doc),
             'name' => trim(reset($name)),
-            'model' => $informations[0],
-            'year' => $informations[1],
-            'displacement' => $informations[2],
+            'model' => $information[0],
+            'year' => $information[1],
+            'displacement' => $information[2],
             'price' => preg_replace('/[^0-9]/', '', $price),
             'tel' => preg_replace('/[^0-9]/', '', reset($phone)),
             'seller_name' => $sellerInfo->firstChild->data
@@ -73,6 +73,10 @@ class LoadHtml
         return $out;
     }
 
+    /**
+     * @param DOMDocument $document
+     * @return array
+     */
     public function getTableContent(DOMDocument $document)
     {
         $tables = $document->getElementsByTagName('table');
@@ -90,6 +94,7 @@ class LoadHtml
     /**
      * @param DOMDocument $document
      * @param string $className
+     * @return \DOMNodeList|false
      */
     public function getTextOfClassName(DOMDocument $document, string $className)
     {

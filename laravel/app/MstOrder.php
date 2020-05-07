@@ -17,10 +17,12 @@ class MstOrder extends Model
      * @param CarbonImmutable $fromDate
      * @param CarbonImmutable $toDate
      * @param float $maxProfitRate
+     * @param int $limit
+     * @param int $offset
      * @return Collection
      */
-    public function getOrders(CarbonImmutable $fromDate, CarbonImmutable $toDate, float $maxProfitRate)
+    public function getOrders(CarbonImmutable $fromDate, CarbonImmutable $toDate, float $maxProfitRate, int $limit, int $offset)
     {
-        return self::where('created_at', '>=', $fromDate)->where('created_at', '<=', $toDate)->where('max_profit_rate', '<>', $maxProfitRate)->get();
+        return self::where('created_at', '>=', $fromDate)->where('created_at', '<=', $toDate)->where('max_profit_rate', '<>', $maxProfitRate)->limit($limit)->offset($offset)->get();
     }
 }
