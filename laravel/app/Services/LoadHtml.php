@@ -12,26 +12,49 @@ class LoadHtml
         $doc = new DOMDocument();
         $doc->loadHTML($html);
         $name = $this->getTextBetweenTags($doc, 'a');
+        $informations = $this->getTableContent($doc);
+        $price = $this->getTextOfClassName($doc, 'price')->item(0)->firstChild->nodeValue;
+        $phone = $this->getTextBetweenTags($doc, 'span');
+        $sellerInfo = $this->getTextOfClassName($doc, 'name')->item(1);
 
         return [
             'image' => $this->getImage($doc),
             'href' => $this->getLink($doc),
             'name' => trim(reset($name)),
+            'model' => $informations[0],
+            'year' => $informations[1],
+            'displacement' => $informations[2],
+            'price' => preg_replace('/[^0-9]/', '', $price),
+            'tel' => preg_replace('/[^0-9]/', '', reset($phone)),
+            'seller_name' => $sellerInfo->firstChild->data
         ];
     }
 
+    /**
+     * @param DOMDocument $document
+     * @return mixed
+     */
     private function getImage(DOMDocument $document)
     {
         $xpath = new \DOMXPath($document);
         return $xpath->evaluate("string(//img/@src)");
     }
 
+    /**
+     * @param DOMDocument $document
+     * @return mixed
+     */
     private function getLink(DOMDocument $document)
     {
         $xpath = new \DOMXPath($document);
         return $xpath->evaluate("string(//a/@href)");
     }
 
+    /**
+     * @param DOMDocument $dom
+     * @param $tag
+     * @return array
+     */
     function getTextBetweenTags(DOMDocument $dom, $tag)
     {
         /*** discard white space ***/
@@ -42,12 +65,35 @@ class LoadHtml
 
         /*** the array to return ***/
         $out = array();
-        foreach ($content as $item)
-        {
+        foreach ($content as $item) {
             /*** add node value to the out array ***/
             $out[] = $item->nodeValue;
         }
         /*** return the results ***/
         return $out;
+    }
+
+    public function getTableContent(DOMDocument $document)
+    {
+        $tables = $document->getElementsByTagName('table');
+        $rows = $tables->item(0)->getElementsByTagName('tr');
+
+        $outs = [];
+        foreach ($rows as $row) {
+            $listTd = $row->getElementsByTagName('td');
+            $outs[] = trim($listTd[$listTd->length - 1]->lastChild->nodeValue);
+        }
+
+        return $outs;
+    }
+
+    /**
+     * @param DOMDocument $document
+     * @param string $className
+     */
+    public function getTextOfClassName(DOMDocument $document, string $className)
+    {
+        $finder = new \DomXPath($document);
+        return $finder->query("//*[contains(@class, '" . $className . "')]");
     }
 }
